@@ -3,7 +3,6 @@ import json
 
 
 def load():
-    # data from https://pokemon-go-api.github.io/pokemon-go-api/ (https://github.com/pokemon-go-api/pokemon-go-api)
     with open("pokemon-in-go.json", "r") as file:
         loaded_json_data = json.load(file)
     return loaded_json_data
