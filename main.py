@@ -8,6 +8,8 @@ def load():
     return loaded_json_data
 
 
+# TODO: make it so we don't have to put [13:] all over the place
+
 UNRELEASED = ["Phione", "Wishiwashi", "Pyukumuku", "Silvally", "Minior", "Magearna", "Chewtle", "Drednaw", "Milcery",
               "Alcremie", "Pincurchin", "Eiscue", "Cufant", "Copperajah", "Dracozolt", "Arctozolt", "Dracovish",
               "Arctovish", "Glastrier", "Spectrier", "Calyrex", "Basculegion", "Maschiff", "Mabosstiff", "Bramblin",
@@ -57,8 +59,9 @@ def parse_single_pokemon(pokemon):
     for attack_name in pokemon["cinematicMoves"]:
         attack = pokemon["cinematicMoves"][attack_name]
         cost = abs(int(attack["combat"]["energy"]))
+        power = abs(int(attack["combat"]["power"]))
         if cost <= 45:
-            parsed["charged"].append({"type": attack["type"]["type"], "cost": cost})
+            parsed["charged"].append({"type": attack["type"]["type"], "cost": cost, "power": power})
 
     return parsed
 
@@ -73,8 +76,6 @@ def get_typechart(file_name):
                 if resistance == "TYPE":
                     continue
                 elif row[resistance] == "":
-                    # maybe we don't' need this...
-                    # resistances[resistance] = 0
                     continue
                 else:
                     types[resistance] = int(row[resistance])
@@ -126,28 +127,43 @@ def find_counters(all_pokemon):
                     fast_counters.add(fast_attack["type"][13:])
 
             charged_counters = set()
+            sub10_found = False
+            fastest = 99.9
+
             for charged_attack in current_pokemon["charged"]:
-                if charged_attack["type"][13:] in attack_types:
+                cost = abs(int(charged_attack["cost"]))
+                power_ratio = float(charged_attack["power"]) / cost
+                # only add weak charged attacks if fast attack is a type counter
+                if len(fast_counters) == 0 and power_ratio <= 1.25:
+                    continue
+                elif charged_attack["type"][13:] in attack_types:
                     charged_counters.add(charged_attack["type"][13:])
 
-            if len(current_pokemon["fast"]) == 0 or len(current_pokemon["charged"]) == 0\
-                    or (len(fast_counters) == 0 and len(charged_counters) == 0):
+                    for fast_attack in current_pokemon["fast"]:
+                        attack_speed = float(cost/fast_attack["speed"])
+                        if not sub10_found and attack_speed <= 10:
+                            sub10_found = True
+                        if attack_speed < fastest and (fast_attack["type"][13:] in attack_types or power_ratio > 1.25):
+                            fastest = attack_speed
+
+            if len(current_pokemon["fast"]) == 0 or len(charged_counters) == 0:
                 continue
 
             modifier = current_pokemon["resistances"][resistance]
-            if modifier < 0:
+            if modifier < 0 and sub10_found:
                 formatted_fast = current_pokemon["fast"]
                 fast_len = len(str(formatted_fast)) - 1
                 formatted_fast = str(formatted_fast)[1:fast_len].replace("'", "").replace("type: ", "").replace("speed: ", "")
 
                 formatted_charged = current_pokemon["charged"]
                 charged_len = len(str(formatted_charged)) - 1
-                formatted_charged = str(formatted_charged)[1:charged_len].replace("'", "").replace("type: ", "").replace("cost: ", "")
+                formatted_charged = str(formatted_charged)[1:charged_len].replace("'", "").replace("type: ", "").replace("cost: ", "").replace("power: ", "")
 
                 resistant_pokemon.append([pokemon_name,
                                           resistance,
                                           modifier,
                                           current_pokemon["bulk"],
+                                          fastest,
                                           fast_counters if len(fast_counters) > 0 else [],
                                           charged_counters if len(charged_counters) > 0 else [],
                                           formatted_fast,
@@ -203,7 +219,6 @@ def find_singleattacktype_attackers(all_pokemon):
         for charged_attack in current_pokemon["charged"]:
             if "type2" in current_pokemon and charged_attack["type"] == current_pokemon["type2"] and charged_attack["cost"] < cheapest_type2_charge:
                 cheapest_type2_charge = charged_attack["cost"]
-
         if fastest_type1_attack > 0 and cheapest_type1_charge < 999:
             speed = float(cheapest_type1_charge / fastest_type1_attack)
             singleattacktype.append([current_pokemon["type"], pokemon_name, speed, current_pokemon["bulk"]])
@@ -228,7 +243,7 @@ if __name__ == '__main__':
     calculate_resistances(pokemon_data)
 
     counters = find_counters(pokemon_data)
-    counters_headers = ["pokemon", "resists", "modifier", "bulk", "fast counters", "charged counters", "fast attacks", "charged attacks"]
+    counters_headers = ["pokemon", "resists", "modifier", "bulk", "fastest", "fast counters", "charged counters", "fast attacks", "charged attacks"]
     save(counters, counters_headers, "rocket counters.csv")
 
     singletype_pokemon = find_singletype_attackers(pokemon_data)
