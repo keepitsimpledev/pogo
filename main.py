@@ -52,8 +52,10 @@ def parse_single_pokemon(pokemon):
         attack = pokemon["quickMoves"][attack_name]
         speed = float(attack["combat"]["energy"]) / float(attack["combat"]["turns"])
         speed = round(speed, 2)
+        damage_per_turn = float(attack["combat"]["power"]) / float(attack["combat"]["turns"])
+        damage_per_turn = round(damage_per_turn, 2)
         if speed >= 4:
-            parsed["fast"].append({"type": attack["type"]["type"], "speed": speed})
+            parsed["fast"].append({"type": attack["type"]["type"], "speed": speed, "power": damage_per_turn})
 
     parsed["charged"] = []
     for attack_name in pokemon["cinematicMoves"]:
@@ -132,20 +134,21 @@ def find_counters(all_pokemon):
 
             for charged_attack in current_pokemon["charged"]:
                 cost = abs(int(charged_attack["cost"]))
-                power_ratio = float(charged_attack["power"]) / cost
-                # only add weak charged attacks if fast attack is a type counter
-                if len(fast_counters) == 0 and power_ratio < 1.25:
-                    continue
-                elif charged_attack["type"][13:] in counter_types:
+                charged_ratio = float(charged_attack["power"]) / cost
+                if charged_attack["type"][13:] in counter_types:
                     charged_counters.add(charged_attack["type"][13:])
 
                     for fast_attack in current_pokemon["fast"]:
                         attack_speed = float(cost/fast_attack["speed"])
+                        attack_speed = round(attack_speed, 2)
                         if not sub10_found and attack_speed <= 10:
                             sub10_found = True
                         is_dual_counter = fast_attack["type"][13:] in counter_types
-                        is_strong_enough = power_ratio >= 1.25
-                        if attack_speed < fastest and (is_dual_counter or is_strong_enough):
+                        is_fast_enough = attack_speed < 8.08
+                        has_sufficient_charge = charged_ratio >= 1.25
+                        has_strong_fast = fast_attack["power"] >= 3.5
+                        if attack_speed < fastest\
+                                and (is_dual_counter or is_fast_enough or has_strong_fast or has_sufficient_charge):
                             fastest = attack_speed
 
             if len(current_pokemon["fast"]) == 0 or len(charged_counters) == 0:
