@@ -158,11 +158,11 @@ def find_counters(all_pokemon):
             if modifier < 0 and sub10_found:
                 formatted_fast = current_pokemon["fast"]
                 fast_len = len(str(formatted_fast)) - 1
-                formatted_fast = str(formatted_fast)[1:fast_len].replace("'", "").replace("type: ", "").replace("speed: ", "")
+                formatted_fast = str(formatted_fast)[1:fast_len].replace("'", "").replace("type: ", "")
 
                 formatted_charged = current_pokemon["charged"]
                 charged_len = len(str(formatted_charged)) - 1
-                formatted_charged = str(formatted_charged)[1:charged_len].replace("'", "").replace("type: ", "").replace("cost: ", "").replace("power: ", "")
+                formatted_charged = str(formatted_charged)[1:charged_len].replace("'", "").replace("type: ", "")
 
                 resistant_pokemon.append([pokemon_name,
                                           resistance,
