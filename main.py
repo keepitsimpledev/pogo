@@ -129,7 +129,6 @@ def find_counters(all_pokemon):
                     fast_counters.add(fast_attack["type"][13:])
 
             charged_counters = set()
-            sub10_found = False
             fastest = 99.9
 
             for charged_attack in current_pokemon["charged"]:
@@ -141,21 +140,20 @@ def find_counters(all_pokemon):
                     for fast_attack in current_pokemon["fast"]:
                         attack_speed = float(cost/fast_attack["speed"])
                         attack_speed = round(attack_speed, 2)
-                        if not sub10_found and attack_speed <= 10:
-                            sub10_found = True
                         is_dual_counter = fast_attack["type"][13:] in counter_types
-                        is_fast_enough = attack_speed < 8.08
-                        has_sufficient_charge = charged_ratio >= 1.25
-                        has_strong_fast = fast_attack["power"] >= 3.5
-                        if attack_speed < fastest\
-                                and (is_dual_counter or is_fast_enough or has_strong_fast or has_sufficient_charge):
+                        is_very_fast = attack_speed < 8.1 and charged_ratio >= 1
+                        has_strong_charged = charged_ratio >= 1.25
+                        has_strong_fast = fast_attack["power"] >= 3.5 and fast_attack["type"][13:] in counter_types
+
+                        if attack_speed < fastest and attack_speed <= 10\
+                                and (is_dual_counter or is_very_fast or has_strong_fast or has_strong_charged):
                             fastest = attack_speed
 
             if len(current_pokemon["fast"]) == 0 or len(charged_counters) == 0:
                 continue
 
             modifier = current_pokemon["resistances"][resistance]
-            if modifier < 0 and sub10_found:
+            if modifier < 0 and fastest < 99.9:
                 formatted_fast = current_pokemon["fast"]
                 fast_len = len(str(formatted_fast)) - 1
                 formatted_fast = str(formatted_fast)[1:fast_len].replace("'", "").replace("type: ", "")
