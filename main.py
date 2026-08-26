@@ -134,7 +134,7 @@ def find_counters(all_pokemon):
                 cost = abs(int(charged_attack["cost"]))
                 power_ratio = float(charged_attack["power"]) / cost
                 # only add weak charged attacks if fast attack is a type counter
-                if len(fast_counters) == 0 and power_ratio <= 1.25:
+                if len(fast_counters) == 0 and power_ratio < 1.25:
                     continue
                 elif charged_attack["type"][13:] in counter_types:
                     charged_counters.add(charged_attack["type"][13:])
@@ -144,7 +144,7 @@ def find_counters(all_pokemon):
                         if not sub10_found and attack_speed <= 10:
                             sub10_found = True
                         is_dual_counter = fast_attack["type"][13:] in counter_types
-                        is_strong_enough = power_ratio > 1.25
+                        is_strong_enough = power_ratio >= 1.25
                         if attack_speed < fastest and (is_dual_counter or is_strong_enough):
                             fastest = attack_speed
 
