@@ -175,6 +175,38 @@ def find_counters(all_pokemon):
     return sorted(resistant_pokemon, key=lambda x: (x[1], x[2], -x[3]))
 
 
+def find_attackers(all_pokemon):
+    attackers = []
+    for pokemon_name in all_pokemon:
+        current_pokemon = all_pokemon[pokemon_name]
+        has_2nd_type = "type2" in current_pokemon
+
+        for charged_attack in current_pokemon["charged"]:
+            power = float(charged_attack["power"] / charged_attack["cost"])
+            has_good_power_ratio = power >= 1.25
+            charged_is_type1 = charged_attack["type"] == current_pokemon["type"]
+            charged_is_type2 = has_2nd_type and charged_attack["type"] == current_pokemon["type"]
+            for fast_attack in current_pokemon["fast"]:
+                speed = float(charged_attack["cost"] / fast_attack["speed"])
+                speed = round(speed, 2)
+                fast_is_type1 = fast_attack["type"] == current_pokemon["type"]
+                fast_is_type2 = has_2nd_type and fast_attack["type"] == current_pokemon["type2"]
+                fast_attack_is_strong = fast_attack["power"] >= 3.5
+                if has_good_power_ratio or fast_attack_is_strong:
+                    stab1 = (charged_is_type1 and has_good_power_ratio) or (fast_is_type1 and fast_attack_is_strong)
+                    stab2 = (charged_is_type2 and has_good_power_ratio) or (fast_is_type2 and fast_attack_is_strong)
+                    stab = charged_attack["type"] if stab1 or stab2 else "none"
+                    attackers.append([pokemon_name,
+                                      charged_attack["type"],
+                                      current_pokemon["bulk"],
+                                      speed,
+                                      stab,
+                                      fast_attack["type"],
+                                      charged_attack["type"]])
+
+    return sorted(attackers, key=lambda x: (x[1], x[4], -x[2], x[3]))
+
+
 def find_singletype_attackers(all_pokemon):
     singletype_pokemon = []
     for pokemon_name in all_pokemon:
@@ -248,6 +280,10 @@ if __name__ == '__main__':
     counters = find_counters(pokemon_data)
     counters_headers = ["pokemon", "resists", "modifier", "bulk", "fastest", "fast counters", "charged counters", "fast attacks", "charged attacks"]
     save(counters, counters_headers, "rocket counters.csv")
+
+    attackers = find_attackers(pokemon_data)
+    attackers_headers = ["pokemon", "type", "bulk", "speed", "stab", "fast", "charged"]
+    save(attackers, attackers_headers, "rocket attackers.csv")
 
     singletype_pokemon = find_singletype_attackers(pokemon_data)
     singletype_headers = ["pokemon", "type", "attack speed", "bulk"]
