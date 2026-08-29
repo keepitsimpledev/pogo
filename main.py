@@ -195,7 +195,12 @@ def find_attackers(all_pokemon):
                 if has_good_power_ratio or fast_attack_is_strong:
                     stab1 = (charged_is_type1 and has_good_power_ratio) or (fast_is_type1 and fast_attack_is_strong)
                     stab2 = (charged_is_type2 and has_good_power_ratio) or (fast_is_type2 and fast_attack_is_strong)
-                    stab = charged_attack["type"] if stab1 or stab2 else "none"
+                    if stab1:
+                        stab = current_pokemon["type"]
+                    elif stab2:
+                        stab = current_pokemon["type2"]
+                    else:
+                        stab = "---"
                     attackers.append([pokemon_name,
                                       charged_attack["type"],
                                       current_pokemon["bulk"],
